@@ -171,3 +171,16 @@ main {
 .album-item svg { width: 76px; height: 76px; display: block; margin: 0 auto 4px; }
 .album-item.locked { background: #ece7f7; color: var(--muted); }
 .album-item.locked svg { filter: brightness(0) opacity(.15); }
+
+/* --- Giocatore e tabella dei progressi --- */
+.player { padding: 0; overflow: hidden; }
+.player svg { width: 44px; height: 44px; }
+.m-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; margin-top: 10px; }
+.m-head { font-weight: 800; color: var(--muted); display: grid; place-items: center; font-size: clamp(.8rem, 3vw, 1.1rem); }
+.m-cell {
+  aspect-ratio: 1; border-radius: 8px; font-weight: 700; color: var(--ink);
+  font-size: clamp(.7rem, 2.8vw, 1rem); padding: 0;
+}
+.m-cell:active { transform: scale(.9); }
+.m-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 12px; font-size: .95rem; }
+.m-legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 4px; vertical-align: -2px; }

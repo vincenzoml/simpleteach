@@ -10,6 +10,13 @@ Piccole app didattiche per bambini, semplici e giocose. Tutto gira nel browser, 
 |---|---|---|
 | [Tabelline](https://vincenzoml.github.io/simpleteach/tabelline/) | Terza elementare | Domande lette ad alta voce, suoni, battute del gufo. Livello N: N risposte giuste per salire, 3 vite per livello, al terzo errore si scende. Le tabelline le sceglie il livello. A volte risposta multipla con una risposta assurda disegnata (unicorno, fiorellini…): le sorprese si sbloccano poco alla volta e si ritrovano nella collezione. |
 
+## Giocatori e salvataggi
+
+Ogni bambino ha il suo profilo (nome e colore, senza password). Livello, sorprese e
+risultati di ogni moltiplicazione si salvano per profilo tramite l'interfaccia `Store`
+in `src/shared/storage.ts`; oggi l'unica implementazione è `LocalStore` (localStorage
+del browser). Per salvare altrove basta scrivere un'altra `Store` e attivarla con `useStore()`.
+
 ## Sviluppo
 
 ```bash

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { UNSEEN, colorFor, record, type Facts } from './mastery';
 import { START_UNLOCKED, SURPRISES, nextUnlock, unlockedCount } from './surprises';
 import { Game, choices, tablesFor } from './game';
 
@@ -68,5 +69,18 @@ describe('sorprese', () => {
     expect(unlockedCount(10_000)).toBe(SURPRISES.length);
     expect(nextUnlock(7)).toEqual({ at: 12, from: 5 });
     expect(nextUnlock(10_000)).toBeNull();
+  });
+});
+
+describe('mastery', () => {
+  it('tiene le ultime 5 risposte e colora in base a quelle', () => {
+    let f: Facts = {};
+    expect(colorFor(f['3x7'])).toBe(UNSEEN.color);
+    f = record(f, 3, 7, false);
+    expect(colorFor(f['3x7'])).toBe('#ff6f69');
+    for (let i = 0; i < 5; i++) f = record(f, 3, 7, true);
+    expect(f['3x7']).toEqual({ n: 6, ok: 5, last: '11111' });
+    expect(colorFor(f['3x7'])).toBe('#3ec5a3');
+    expect(f['7x3']).toBeUndefined();
   });
 });

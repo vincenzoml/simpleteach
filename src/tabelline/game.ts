@@ -28,7 +28,9 @@ export class Game {
   wrong = 0;
   private last?: Question;
 
-  constructor(private rand: () => number = Math.random) {}
+  constructor(level = 1, private rand: () => number = Math.random) {
+    this.level = Math.max(1, level);
+  }
 
   get tables(): number[] {
     return tablesFor(this.level);

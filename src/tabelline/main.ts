@@ -2,6 +2,9 @@ import { Game, choices, type Question } from './game';
 import { CHEERS, JOKES, SURPRISES, nextUnlock, unlockedCount, type Surprise } from './surprises';
 import { isSpeechEnabled, setSpeechEnabled, speak } from '../shared/speech';
 import { sfx, sillySounds } from '../shared/sfx';
+import { getStore, type Profile } from '../shared/storage';
+import { avatar, chooseProfile } from '../shared/profiles';
+import { LEVELS, UNSEEN, colorFor, factKey, record, score, type Facts } from './mastery';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -25,12 +28,23 @@ const owl = $<SVGElement & HTMLElement>('owl');
 const card = $('card');
 const answerEl = $('answer');
 
-// --- Progressi salvati (risposte giuste totali, barzellette già raccontate) ---
+// --- Progressi del giocatore, salvati nello Store (vedi shared/storage.ts) ---
 
-interface Stats { total: number; jokes: number; seen: number }
-const stats: Stats = { total: 0, jokes: 0, seen: 0 };
-try { Object.assign(stats, JSON.parse(localStorage.getItem('tabelline.stats') ?? '{}')); } catch { /* primo avvio */ }
-const save = () => { try { localStorage.setItem('tabelline.stats', JSON.stringify(stats)); } catch { /* ignora */ } };
+interface Saved {
+  level: number;
+  total: number; // risposte giuste totali: sbloccano le sorprese
+  jokes: number; // barzellette già raccontate
+  seen: number; // sorprese già viste nella collezione
+  facts: Facts; // come va ogni singola moltiplicazione
+}
+const fresh = (): Saved => ({ level: 1, total: 0, jokes: 0, seen: 0, facts: {} });
+
+let player: Profile;
+let stats = fresh();
+const save = () => {
+  if (game) stats.level = game.level;
+  getStore().set(player.id, 'tabelline', stats);
+};
 
 let game: Game;
 let q: Question;
@@ -59,15 +73,58 @@ function mood(m: '' | 'happy' | 'sad' | 'laugh') {
 
 // --- Avvio ---
 
-$('play').onclick = () => {
-  game = new Game();
+const inGame = ['game', 'level', 'player', 'table-btn', 'album-btn'];
+
+async function start() {
+  speechSynthesis?.cancel();
+  inGame.forEach((id) => ($(id).hidden = true));
+  $('start').hidden = false;
+  player = await chooseProfile($('profiles'));
+  stats = { ...fresh(), ...(await getStore().get<Saved>(player.id, 'tabelline')) };
+  game = new Game(stats.level);
+  $('player').innerHTML = avatar(player, 44);
+  
+// --- Tabella: quanto bene si sa ogni moltiplicazione ---
+
+function openMastery() {
+  const f = stats.facts;
+  const head = (n: number | string) => `<div class="m-head">${n}</div>`;
+  let cells = head('×');
+  for (let b = 1; b <= 10; b++) cells += head(b);
+  for (let a = 1; a <= 10; a++) {
+    cells += head(a);
+    for (let b = 1; b <= 10; b++) {
+      const fact = f[factKey(a, b)];
+      cells += `<button class="m-cell" style="background:${colorFor(fact)}" data-a="${a}" data-b="${b}">${a * b}</button>`;
+    }
+  }
+  $('mastery-grid').innerHTML = cells;
+  $('mastery-legend').innerHTML = [...LEVELS, UNSEEN].map((l) => `<span><i style="background:${l.color}"></i>${l.label}</span>`).join('');
+  $('mastery-grid').querySelectorAll<HTMLElement>('.m-cell').forEach((c) => {
+    c.onclick = () => {
+      const a = Number(c.dataset.a), b = Number(c.dataset.b);
+      const fact = f[factKey(a, b)];
+      const s = score(fact);
+      speak(`${a} per ${b} fa ${a * b}. ` + (s === null ? 'Non te l\'ho ancora chiesta.'
+        : `Giuste ${[...fact!.last].filter((x) => x === '1').length} delle ultime ${fact!.last.length}.`));
+    };
+  });
+  $('mastery').hidden = false;
+}
+
+$('table-btn').onclick = openMastery;
+$('mastery-close').onclick = () => { $('mastery').hidden = true; speechSynthesis?.cancel(); };
+$('mastery').onclick = (e) => { if (e.target === $('mastery')) $('mastery').hidden = true; };
   $('start').hidden = true;
-  $('game').hidden = false;
-  $('level').hidden = false;
+  inGame.forEach((id) => ($(id).hidden = false));
   sfx.levelUp();
   renderProgress();
-  ask();
-};
+  ask(false);
+  await say(stats.total ? `Ciao ${player.name}! Ripartiamo dal livello ${game.level}.` : `Ciao ${player.name}! Iniziamo!`, 1800);
+  speak(`Quanto fa ${questionText()}?`);
+}
+
+$('player').onclick = () => { if (!busy) start(); };
 
 // Vite: cuori pieni a sinistra, quelli persi diventano grigi da destra.
 function renderProgress(popStar = -1, popHeart = -1) {
@@ -80,7 +137,7 @@ function renderProgress(popStar = -1, popHeart = -1) {
 
 const questionText = () => `${q.a} per ${q.b}`;
 
-function ask() {
+function ask(read = true) {
   q = game.next();
   typed = '';
   $('qa').textContent = String(q.a);
@@ -95,7 +152,7 @@ function ask() {
   answerEl.hidden = mode !== 'keypad';
   if (mode === 'choices') buildChoices();
   busy = false;
-  speak(`Quanto fa ${questionText()}?`);
+  if (read) speak(`Quanto fa ${questionText()}?`);
 }
 
 // --- Risposta multipla, a volte con una risposta assurda ---
@@ -158,11 +215,12 @@ async function submit(value = Number(typed)) {
   const outcome = game.answer(q, value);
   const result = q.a * q.b;
   const said = `${questionText()} fa ${result}`;
+  const unlockedBefore = unlockedCount(stats.total);
+  if (value === result) stats.total++;
+  stats.facts = record(stats.facts, q.a, q.b, value === result);
+  save();
 
   if (outcome === 'correct' || outcome === 'levelUp') {
-    const unlockedBefore = unlockedCount(stats.total);
-    stats.total++;
-    save();
     card.classList.add('ok');
     mood('happy');
     sfx.correct();
@@ -263,7 +321,38 @@ function openAlbum() {
 $('album-btn').onclick = openAlbum;
 $('album-close').onclick = () => { $('album').hidden = true; speechSynthesis?.cancel(); };
 $('album').onclick = (e) => { if (e.target === $('album')) $('album').hidden = true; };
-$('album-new').hidden = stats.seen >= unlockedCount(stats.total);
+
+// --- Tabella: quanto bene si sa ogni moltiplicazione ---
+
+function openMastery() {
+  const f = stats.facts;
+  const head = (n: number | string) => `<div class="m-head">${n}</div>`;
+  let cells = head('×');
+  for (let b = 1; b <= 10; b++) cells += head(b);
+  for (let a = 1; a <= 10; a++) {
+    cells += head(a);
+    for (let b = 1; b <= 10; b++) {
+      const fact = f[factKey(a, b)];
+      cells += `<button class="m-cell" style="background:${colorFor(fact)}" data-a="${a}" data-b="${b}">${a * b}</button>`;
+    }
+  }
+  $('mastery-grid').innerHTML = cells;
+  $('mastery-legend').innerHTML = [...LEVELS, UNSEEN].map((l) => `<span><i style="background:${l.color}"></i>${l.label}</span>`).join('');
+  $('mastery-grid').querySelectorAll<HTMLElement>('.m-cell').forEach((c) => {
+    c.onclick = () => {
+      const a = Number(c.dataset.a), b = Number(c.dataset.b);
+      const fact = f[factKey(a, b)];
+      const s = score(fact);
+      speak(`${a} per ${b} fa ${a * b}. ` + (s === null ? 'Non te l\'ho ancora chiesta.'
+        : `Giuste ${[...fact!.last].filter((x) => x === '1').length} delle ultime ${fact!.last.length}.`));
+    };
+  });
+  $('mastery').hidden = false;
+}
+
+$('table-btn').onclick = openMastery;
+$('mastery-close').onclick = () => { $('mastery').hidden = true; speechSynthesis?.cancel(); };
+$('mastery').onclick = (e) => { if (e.target === $('mastery')) $('mastery').hidden = true; };
 
 // --- Controlli ---
 
@@ -281,7 +370,7 @@ function buildKeypad() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if ($('game').hidden || !$('album').hidden) return;
+  if ($('game').hidden || !$('album').hidden || !$('mastery').hidden) return;
   if (/^\d$/.test(e.key)) type(e.key);
   else if (e.key === 'Backspace') erase();
   else if (e.key === 'Enter' && mode === 'keypad') submit();
@@ -300,3 +389,4 @@ try { if (localStorage.getItem('tabelline.voice') === '0') setSpeechEnabled(fals
 syncMute();
 
 buildKeypad();
+start();

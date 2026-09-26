@@ -8,7 +8,7 @@ Piccole app didattiche per bambini, semplici e giocose. Tutto gira nel browser, 
 
 | App | Per chi | Cosa fa |
 |---|---|---|
-| [Tabelline](https://vincenzoml.github.io/simpleteach/tabelline/) | Terza elementare | Domande sulle tabelline lette ad alta voce. Al livello N servono N risposte giuste per salire; con 2N errori si torna al livello precedente. |
+| [Tabelline](https://vincenzoml.github.io/simpleteach/tabelline/) | Terza elementare | Domande lette ad alta voce, suoni, battute del gufo. Livello N: N risposte giuste per salire, 2N errori per scendere. Le tabelline le sceglie il livello. A volte risposta multipla con una risposta assurda disegnata (unicorno, fiorellini…): le sorprese si sbloccano poco alla volta e si ritrovano nella collezione. |
 
 ## Sviluppo
 

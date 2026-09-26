@@ -78,3 +78,23 @@ export class Game {
     this.wrong = 0;
   }
 }
+
+const shuffle = <T>(xs: T[], rand: () => number): T[] => {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// n numeri mescolati: il risultato giusto più errori plausibili (tabellina vicina, ±1, cifre invertite).
+export function choices(q: Question, n: number, rand: () => number = Math.random): number[] {
+  const r = q.a * q.b;
+  const near = [r + q.a, r - q.a, r + q.b, r - q.b, r + 1, r - 1, r + 10, r - 10,
+    (q.a + 1) * (q.b + 1), Number([...String(r)].reverse().join(''))];
+  const wrong = new Set<number>();
+  for (const c of shuffle(near, rand)) if (c > 0 && c !== r && wrong.size < n - 1) wrong.add(c);
+  for (let k = 2; wrong.size < n - 1; k++) wrong.add(r + k);
+  return shuffle([r, ...wrong], rand);
+}

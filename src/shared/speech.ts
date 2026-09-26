@@ -1,3 +1,5 @@
+import { setSfxEnabled } from './sfx';
+
 // Lettura ad alta voce in italiano con la Web Speech API del browser.
 
 let enabled = true;
@@ -44,8 +46,10 @@ export function speak(text: string): Promise<void> {
   });
 }
 
+// Un solo interruttore per voce ed effetti sonori.
 export function setSpeechEnabled(on: boolean) {
   enabled = on;
+  setSfxEnabled(on);
   if (!on && supported) speechSynthesis.cancel();
 }
 

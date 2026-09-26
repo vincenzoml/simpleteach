@@ -1,7 +1,8 @@
 // Logica pura del gioco delle tabelline (senza DOM, testabile).
 //
 // Regola dei livelli: al livello N servono N risposte giuste per salire;
-// se gli errori nel livello arrivano a 2N si scende di un livello (minimo 1).
+// le vite sono sempre 3: al terzo errore nel livello si scende di un livello (minimo 1).
+// Vite fisse, non legate al livello: altrimenti sbagliare apposta diventa una scorciatoia.
 //
 // Le tabelline le sceglie il gioco: si parte dalle più facili e a ogni
 // livello se ne aggiunge una, fino ad averle tutte dal livello 8.
@@ -16,6 +17,8 @@ export interface Question {
   a: number;
   b: number;
 }
+
+export const LIVES = 3;
 
 export type Outcome = 'correct' | 'wrong' | 'levelUp' | 'levelDown';
 
@@ -36,7 +39,7 @@ export class Game {
   }
 
   get maxErrors(): number {
-    return this.level * 2;
+    return LIVES;
   }
 
   next(): Question {

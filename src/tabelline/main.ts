@@ -7,8 +7,8 @@ const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as 
 
 const STAR = (on: boolean) =>
   `<svg viewBox="0 0 24 24"><path d="M12 2l3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21.1l1.4-7L2 9.3l7-.8z" fill="${on ? '#ffc93c' : '#e6e0f5'}" stroke="${on ? '#d9a51f' : 'none'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
-const DROP = (on: boolean) =>
-  `<svg viewBox="0 0 24 24"><path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z" fill="${on ? '#5fa8ff' : '#e6e0f5'}"/></svg>`;
+const HEART = (full: boolean) =>
+  `<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z" fill="${full ? '#ff6f69' : '#e6e0f5'}" stroke="${full ? '#d9534f' : 'none'}" stroke-width="1.2"/></svg>`;
 const BACKSPACE = `<svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 9l5 6M17 9l-5 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const CHECK = `<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const drawing = (s: Surprise) => `<svg viewBox="0 0 100 100">${s.svg}</svg>`;
@@ -69,12 +69,13 @@ $('play').onclick = () => {
   ask();
 };
 
-function renderProgress(popStar = -1, popDrop = -1) {
+// Vite: cuori pieni a sinistra, quelli persi diventano grigi da destra.
+function renderProgress(popStar = -1, popHeart = -1) {
   $('level').querySelector('b')!.textContent = String(game.level);
   $('stars').innerHTML = Array.from({ length: game.needed }, (_, i) => STAR(i < game.correct)).join('');
-  $('misses').innerHTML = Array.from({ length: game.maxErrors }, (_, i) => DROP(i < game.wrong)).join('');
+  $('misses').innerHTML = Array.from({ length: game.maxErrors }, (_, i) => HEART(i < game.maxErrors - game.wrong)).join('');
   $('stars').children[popStar]?.classList.add('pop');
-  $('misses').children[popDrop]?.classList.add('pop');
+  $('misses').children[popHeart]?.classList.add('pop');
 }
 
 const questionText = () => `${q.a} per ${q.b}`;
@@ -184,7 +185,7 @@ async function submit(value = Number(typed)) {
     answerEl.textContent = String(result);
     answerEl.classList.add('hint');
     if (outcome === 'wrong') {
-      renderProgress(-1, game.wrong ? before.wrong : -1);
+      renderProgress(-1, game.maxErrors - game.wrong);
       await Promise.all([speak(`No, ${said}`), pause(1800)]);
     } else {
       await Promise.all([speak(`No, ${said}`), pause(1500)]);

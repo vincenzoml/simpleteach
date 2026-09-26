@@ -12,18 +12,18 @@ describe('Game', () => {
     expect(g.level).toBe(3);
   });
 
-  it('scende di livello dopo 2N errori', () => {
+  it('scende di livello dopo 3 errori, a qualunque livello', () => {
     const g = new Game();
-    g.answer({ a: 3, b: 1 }, 3); // -> livello 2
-    for (let i = 0; i < 3; i++) expect(g.answer({ a: 3, b: 2 }, 5)).toBe('wrong');
+    for (let i = 0; i < 6; i++) g.answer({ a: 3, b: 1 }, 3); // -> livello 4
+    expect(g.level).toBe(4);
+    for (let i = 0; i < 2; i++) expect(g.answer({ a: 3, b: 2 }, 5)).toBe('wrong');
     expect(g.answer({ a: 3, b: 2 }, 5)).toBe('levelDown');
-    expect(g.level).toBe(1);
+    expect(g.level).toBe(3);
   });
 
   it('non scende sotto il livello 1', () => {
     const g = new Game();
-    g.answer({ a: 2, b: 2 }, 5);
-    g.answer({ a: 2, b: 2 }, 5);
+    for (let i = 0; i < 3; i++) g.answer({ a: 2, b: 2 }, 5);
     expect(g.level).toBe(1);
     expect(g.wrong).toBe(0);
   });

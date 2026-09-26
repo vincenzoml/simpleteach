@@ -2,6 +2,15 @@
 //
 // Regola dei livelli: al livello N servono N risposte giuste per salire;
 // se gli errori nel livello arrivano a 2N si scende di un livello (minimo 1).
+//
+// Le tabelline le sceglie il gioco: si parte dalle più facili e a ogni
+// livello se ne aggiunge una, fino ad averle tutte dal livello 8.
+
+const ORDER = [1, 2, 10, 5, 3, 4, 6, 9, 7, 8];
+
+export function tablesFor(level: number): number[] {
+  return ORDER.slice(0, Math.min(ORDER.length, level + 2));
+}
 
 export interface Question {
   a: number;
@@ -16,10 +25,11 @@ export class Game {
   wrong = 0;
   private last?: Question;
 
-  constructor(
-    public tables: number[],
-    private rand: () => number = Math.random,
-  ) {}
+  constructor(private rand: () => number = Math.random) {}
+
+  get tables(): number[] {
+    return tablesFor(this.level);
+  }
 
   get needed(): number {
     return this.level;
@@ -32,13 +42,12 @@ export class Game {
   next(): Question {
     let q: Question;
     do {
-      const a = this.tables[Math.floor(this.rand() * this.tables.length)];
+      const tables = this.tables;
+      // La tabellina più nuova esce più spesso, così si impara.
+      const a = this.rand() < 0.4 ? tables[tables.length - 1] : tables[Math.floor(this.rand() * tables.length)];
       const b = 1 + Math.floor(this.rand() * 10);
       q = this.rand() < 0.5 ? { a, b } : { a: b, b: a };
-    } while (
-      this.last && q.a === this.last.a && q.b === this.last.b &&
-      this.tables.length * 10 > 1
-    );
+    } while (this.last && q.a === this.last.a && q.b === this.last.b);
     this.last = q;
     return q;
   }

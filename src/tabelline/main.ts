@@ -17,7 +17,6 @@ const owl = $<SVGElement & HTMLElement>('owl');
 const card = $('card');
 const answerEl = $('answer');
 
-let selected = loadTables();
 let game: Game;
 let q: Question;
 let typed = '';
@@ -25,33 +24,8 @@ let busy = false;
 
 // --- Schermata iniziale ---
 
-function loadTables(): number[] {
-  try {
-    const v = JSON.parse(localStorage.getItem('tabelline.tables') ?? '');
-    if (Array.isArray(v) && v.length) return v;
-  } catch { /* nessun valore salvato */ }
-  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-}
-
-function renderChips() {
-  const box = $('tables');
-  box.innerHTML = '';
-  for (let n = 1; n <= 10; n++) {
-    const b = document.createElement('button');
-    b.className = 'chip' + (selected.includes(n) ? ' on' : '');
-    b.textContent = String(n);
-    b.onclick = () => {
-      selected = selected.includes(n) ? selected.filter((x) => x !== n) : [...selected, n].sort((a, b) => a - b);
-      renderChips();
-    };
-    box.append(b);
-  }
-  ($('play') as HTMLButtonElement).disabled = selected.length === 0;
-}
-
 $('play').onclick = () => {
-  try { localStorage.setItem('tabelline.tables', JSON.stringify(selected)); } catch { /* ignora */ }
-  game = new Game(selected);
+  game = new Game();
   $('start').hidden = true;
   $('game').hidden = false;
   $('level').hidden = false;
@@ -191,5 +165,4 @@ mute.onclick = () => {
 try { if (localStorage.getItem('tabelline.voice') === '0') setSpeechEnabled(false); } catch { /* ignora */ }
 syncMute();
 
-renderChips();
 buildKeypad();

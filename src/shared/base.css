@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap');
+
+:root {
+  --bg: #fff8e7;
+  --ink: #3b2f5c;
+  --muted: #7a6f99;
+  --card: #ffffff;
+  --sun: #ffc93c;
+  --coral: #ff6f69;
+  --mint: #3ec5a3;
+  --sky: #5fa8ff;
+  --grape: #9b6bff;
+  --shadow: 0 6px 0 rgba(59, 47, 92, 0.15);
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; min-height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Baloo 2', 'Comic Sans MS', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: none;
+  touch-action: manipulation;
+}
+
+.bg-deco {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
